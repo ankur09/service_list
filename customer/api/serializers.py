@@ -5,7 +5,8 @@ from customer.models import Customer ,ServiceRegistration
 from django.contrib.auth.hashers import make_password
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
-
+from django.utils.crypto import get_random_string
+import hashlib
 from rest_framework.serializers import (
 	BooleanField,
 	EmailField,
@@ -80,14 +81,14 @@ class RegisterSerializer(ModelSerializer):
 		password=validated_data['password']
 		service_user=validated_data['service_user']
 		service_provider=validated_data['service_provider']
-		activation_key=validated_data['activation_key']
+		#activation_key=validated_data['activation_key']
 		user=User(
 			username=username,
 			email=email
 			)
 		user.set_password(password)
 		user.save()
-		service=ServiceRegistration.objects.create(user_service=user,service_user=service_user,service_provider=service_provider,activation_key=activation_key,key_expires=datetime.strftime(datetime.now()+timedelta(days=2),"%Y-%m-%d %H:%M:%S"))
+		service=ServiceRegistration.objects.create(user_service=user,service_user=service_user,service_provider=service_provider)
 		service.save()
 		return user
 
@@ -165,9 +166,36 @@ class ForegetPasswordSerializer(ModelSerializer):
 		email=data['email']
 		user=User.objects.get(email=email)
 		if not user:
-			raise ValidationError('Email address of this user is not exist')
+			raise ValidationError('Email address of this user is not exist so please signup')
 		return data
 
+	
+
+class PasswordSerializer(ModelSerializer):
+	password2=CharField(allow_blank=False,write_only=True,label='Confirm Password')
+	password=CharField(allow_blank=False,write_only=True,label='Password')
+	class Meta:
+		model=User
+		fields=[
+				'password',
+				'password2'
+				]
+
+	def validate_password(self,value):
+		data=self.get_initial()
+		password=data.get('password')
+		password2=value
+		if password!=password2:
+			raise ValidationError("Password must match")
+		return value
+
+	def validate_password2(self,value):
+		data=self.get_initial()
+		password=data.get('password')
+		password2=value
+		if password!=password2:
+			raise ValidationError("Password must match")
+		return value
 
 	
 		

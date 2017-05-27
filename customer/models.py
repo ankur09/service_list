@@ -26,21 +26,24 @@ class ServiceRegistration(Customer):
 	user_service=models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='service')
 	service_user=models.BooleanField(default=False)
 	service_provider=models.BooleanField(default=False)
-	activation_key=models.CharField(max_length=50,blank=True,null=True)
+	activation_key=models.CharField(max_length=120,blank=True,null=True)
 	key_expires=models.DateTimeField(default=datetime.now)
 
 	class Meta:
 		db_table="service_registered"
+
+	def __unicode__(self):
+		return self.user_service.username
 
 	def json_data(self):
 		d={'service_name':self.user_service.username,'email':self.user_service.email}
 		return d
 
 	def send_email(self):
-		subject='activation link'
-		#print self.activation_key
-		link='http://service_listing.com/activate/' +self.activation_key
-		from_email='ankursrivastav9958@gmail.com'
-		to_email=self.user_service.email
-		return send_mail(subject,link,from_email,[to_email],fail_silently=False)
+		if self.activation_key is not None :
+			subject='activation link'
+			link='http://127.0.0.1:8000/api/customer/activation_code/%s/%s/' %(self.activation_key,self.id)
+			from_email=settings.EMAIL_HOST_USER
+			to_email=[from_email,self.user_service.email]
+			return send_mail(subject,link,from_email,to_email,fail_silently=False)
 

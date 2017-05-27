@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+EMAIL_HOST='smtp.gmail.com'
+EMAIL_HOST_USER='youremail@gmail.com'
+EMAIL_HOST_PASSWORD='yourpassword'
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
 
 # Application definition
 
@@ -108,7 +113,7 @@ AUTHENTICATION_BACKENDS = (
 
 # Facebook configuration
 SOCIAL_AUTH_FACEBOOK_KEY = '264007507406366'
-OCIAL_AUTH_FACEBOOK_SECRET = '1f4cf529611f49c372d43be9d3971532'
+SOCIAL_AUTH_FACEBOOK_SECRET = '1f4cf529611f49c372d43be9d3971532'
 
 # Define SOCIAL_AUTH_FACEBOOK_SCOPE to get extra permissions from facebook. Email is not sent by default, to get it, you must request the email permission:
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
