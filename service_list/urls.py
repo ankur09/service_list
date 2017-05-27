@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api/countryinfo/',include('countryinfo.country_api.urls',namespace='country-api')),
-    url(r'^api/customer/',include('customer.api.urls',namespace='customer-api'))
+    url(r'^api/customer/',include('customer.api.urls',namespace='customer-api')),
+    url(r'^auth/',include('rest_framework_social_oauth2.urls'))
 
 ]

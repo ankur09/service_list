@@ -1,12 +1,12 @@
 from __future__ import unicode_literals
 from django.db import models
 from datetime import datetime
-from customer.models import Customer
+from customer.models import ServiceRegistration
 from serviceprovider.models import ServiceProviderRelation
 # Create your models here
 
 class CustomerBooking(models.Model):
-	customer = models.ForeignKey(Customer)
+	customer = models.ForeignKey(ServiceRegistration)
 	service_provider = models.ForeignKey(ServiceProviderRelation)
 	added_on = models.DateTimeField(default=datetime.now)
 

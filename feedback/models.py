@@ -1,14 +1,14 @@
 from __future__ import unicode_literals
 
 from django.db import models
-from customer.models import Customer
+from customer.models import ServiceRegistration
 from serviceprovider.models import ServiceProviderRelation
 from datetime import datetime
 # Create your models here.
 
 
 class Rating(models.Model):
-	customer = models.ForeignKey(Customer)
+	customer = models.ForeignKey(ServiceRegistration)
 	service_provider = models.ForeignKey(ServiceProviderRelation)
 	rating=models.FloatField(default=0)
 	added_on = models.DateTimeField(default=datetime.now)
@@ -19,7 +19,7 @@ class Rating(models.Model):
 
 
 class Review(models.Model):
-	customer = models.ForeignKey(Customer)
+	customer = models.ForeignKey(ServiceRegistration)
 	service_provider = models.ForeignKey(ServiceProviderRelation)
 	review=models.CharField(max_length=255)
 	added_on = models.DateTimeField(default=datetime.now)

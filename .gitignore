@@ -1,2 +1,4 @@
 *.pyc
-service_list/settings.py
+customer/migrations/
+feedback/migrations/
+transaction/migrations/

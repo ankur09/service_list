@@ -2,6 +2,10 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q 
 from django.contrib.auth import authenticate
 from customer.models import Customer ,ServiceRegistration
+from django.contrib.auth.hashers import make_password
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import redirect
+
 from rest_framework.serializers import (
 	BooleanField,
 	EmailField,
@@ -9,12 +13,15 @@ from rest_framework.serializers import (
 	ModelSerializer, 
 	HyperlinkedIdentityField,
 	SerializerMethodField,
-	ValidationError
+	ValidationError,
+	SerializerMethodField
 	)
 from datetime import datetime
 import pdb
 
 User=get_user_model()
+
+
 
 class RegisterSerializer(ModelSerializer):
 	password2=CharField(allow_blank=False,write_only=True,label='Confirm Password',style={'input_type':'password'})
@@ -73,13 +80,14 @@ class RegisterSerializer(ModelSerializer):
 		password=validated_data['password']
 		service_user=validated_data['service_user']
 		service_provider=validated_data['service_provider']
+		activation_key=validated_data['activation_key']
 		user=User(
 			username=username,
 			email=email
 			)
 		user.set_password(password)
 		user.save()
-		service=ServiceRegistration.objects.create(user_service=user,service_user=service_user,service_provider=service_provider)
+		service=ServiceRegistration.objects.create(user_service=user,service_user=service_user,service_provider=service_provider,activation_key=activation_key,key_expires=datetime.strftime(datetime.now()+timedelta(days=2),"%Y-%m-%d %H:%M:%S"))
 		service.save()
 		return user
 
@@ -143,6 +151,23 @@ class UserLoginSerializer(ModelSerializer):
 
 		data['token']="anfaflfafja"
 		return data
+
+
+class ForegetPasswordSerializer(ModelSerializer):
+	email=CharField(label='Email address',required=True,write_only=True)
+	class Meta:
+		model=User
+		fields=[
+				'email'
+				]
+
+	def validate(self,data):
+		email=data['email']
+		user=User.objects.get(email=email)
+		if not user:
+			raise ValidationError('Email address of this user is not exist')
+		return data
+
 
 	
 		
