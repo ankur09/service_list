@@ -7,7 +7,9 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.utils.crypto import get_random_string
 import hashlib
+from serviceprovider.serializers import ServiceProviderSerializer
 from rest_framework.serializers import (
+	IntegerField,
 	BooleanField,
 	EmailField,
 	CharField,
@@ -19,6 +21,7 @@ from rest_framework.serializers import (
 	)
 from datetime import datetime
 import pdb
+from countryinfo.country_api.serializers import CountryCreateSerializer
 
 User=get_user_model()
 
@@ -200,4 +203,70 @@ class PasswordSerializer(ModelSerializer):
 	
 		
 
+class UserDetailSerializer(ModelSerializer):
+	class Meta:
+		model=User
+		fields=[
+			'id'
+			]
 
+class ProfileSerializerdemo(ModelSerializer):
+	user=UserDetailSerializer
+	class Meta:
+		model=ServiceRegistration
+		fields=[
+			'user',
+			'name',
+			'phone',
+			'address',
+			'email_verified'
+			]
+
+class ChangePasswordSerializer(ModelSerializer):
+	user_id=IntegerField(required=True,write_only=True,label='User id')
+	old_password=CharField(required=True,write_only=True,label='Old Password')
+	new_password=CharField(required=True,write_only=True,label='New Password')
+	class Meta:
+		model=User
+		fields=[
+			'user_id',
+			'old_password',
+			'new_password'
+			]
+
+	def validate(self,data):
+		user_id=data['user_id']
+		#user_id=7
+		old_password=data['old_password']
+		new_password=data['new_password']
+		user=User.objects.filter(id=user_id).distinct()
+		if user.exists():
+			user_obj=user.first()
+
+		else:
+			raise ValidationError('username of particular id does not exist')
+
+		if user_obj:
+			if not user_obj.check_password(old_password):
+				raise ValidationError("Incorrect old password")
+
+		return data
+
+
+class ProfileSerializer(ModelSerializer):
+	service=ServiceProviderSerializer()
+	user=UserDetailSerializer()
+	country=CountryCreateSerializer()
+	latitude=CharField(required=False,write_only=True)
+	longitude=CharField(required=False,write_only=True)
+	class Meta:
+		model=ServiceRegistration
+		fields=[
+				'name',
+				'phone',
+				'country',
+				'service',
+				'user',
+				'latitude',
+				'longitude'
+				]

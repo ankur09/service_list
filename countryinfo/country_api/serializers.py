@@ -29,7 +29,6 @@ class CountryCreateSerializer(ModelSerializer):
 		fields=[
 			'code',
 			'name',
-			'added_on'
 			]
 
 

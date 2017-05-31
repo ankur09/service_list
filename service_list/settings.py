@@ -28,8 +28,8 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 EMAIL_HOST='smtp.gmail.com'
-EMAIL_HOST_USER='youremail@gmail.com'
-EMAIL_HOST_PASSWORD='yourpassword'
+EMAIL_HOST_USER='ankursrivastav9958@gmail.com'
+EMAIL_HOST_PASSWORD='haramiankur'
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 
@@ -123,7 +123,7 @@ SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
 
 WSGI_APPLICATION = 'service_list.wsgi.application'
 
-
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 

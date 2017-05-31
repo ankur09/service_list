@@ -16,7 +16,9 @@ from .serializers import (
 	RegisterListSerializer,
 	UserLoginSerializer,
 	ForegetPasswordSerializer,
-	PasswordSerializer
+	PasswordSerializer,
+	ChangePasswordSerializer,
+	ProfileSerializer
 	)
 from rest_framework.generics import (
 	CreateAPIView,
@@ -73,10 +75,10 @@ class ForgetPasswordAPIView(APIView):
 		if serializer.is_valid(raise_exception=True):
 			user=User.objects.get(email=data['email'])#use serializer field
 			chars='abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-			secret_key=get_random_string(10,chars)
+			secret_key=get_random_string(5,chars)
 			activation_key=hashlib.sha256((secret_key + user.username).encode('utf-8')).hexdigest()
 			print activation_key
-			service_register=ServiceRegistration.objects.get(user_service=user)
+			service_register=ServiceRegistration.objects.select_related('activation_key').get(user_service=user)
 			service_register.activation_key=activation_key
 			service_register.save()
 			service_register.send_email()
@@ -93,8 +95,9 @@ class PasswordAPIView(APIView):
 		#pdb.set_trace()
 		serializer=PasswordSerializer(data=data)
 		if serializer.is_valid(raise_exception=True):
-			service_user=ServiceRegistration.objects.get(activation_key=kwargs['activation_key'],id=kwargs['service_id'])
-			if service_user.exists():
+			service_user=ServiceRegistration.objects.filter(activation_key__icontains=kwargs['activation_key'],id=kwargs['service_id']).distinct()
+			if service_user.exists() and service_user.count()==1:
+				service_user=service_user.first()
 				service_user.email_verified=True
 				service_user.save()
 				return Response({'success':True})
@@ -103,6 +106,31 @@ class PasswordAPIView(APIView):
 				return Response({'Status':'Failed'})
 				
 
+class ChangePasswordView(APIView):
+	serializer_class=ChangePasswordSerializer
+
+	def post(self,request,*args,**kwargs):
+		data=request.data
+		serializer=ChangePasswordSerializer(data=data)
+		if serializer.is_valid(raise_exception=True):
+			user=User.objects.filter(id=serializer.validated_data['user_id']).distinct()
+			if user.exists() and user.count()==1:
+				user_obj=user.first()
+			if user_obj:
+				user_obj.set_password(serializer.validated_data['new_password'])
+				user_obj.save()
+				return Response({'success':True})
+			else:
+				return Response({'status':False})
 
 
+class ProfileAPIView(APIView):
+	serializer_class=ProfileSerializer
 
+	def post(self,request,*args,**kwargs):
+		data=request.data
+		serializer=ProfileSerializer(data=data)
+		if serializer.is_valid(raise_exception=True):
+			return Response({'success':True})
+		else:
+			return Response({'status':False})

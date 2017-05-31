@@ -26,7 +26,7 @@ class ServiceRegistration(Customer):
 	user_service=models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='service')
 	service_user=models.BooleanField(default=False)
 	service_provider=models.BooleanField(default=False)
-	activation_key=models.CharField(max_length=120,blank=True,null=True)
+	activation_key=models.CharField(max_length=255,blank=True,null=True)
 	key_expires=models.DateTimeField(default=datetime.now)
 
 	class Meta:
@@ -34,10 +34,6 @@ class ServiceRegistration(Customer):
 
 	def __unicode__(self):
 		return self.user_service.username
-
-	def json_data(self):
-		d={'service_name':self.user_service.username,'email':self.user_service.email}
-		return d
 
 	def send_email(self):
 		if self.activation_key is not None :
