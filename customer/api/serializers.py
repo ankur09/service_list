@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q 
 from django.contrib.auth import authenticate
 from customer.models import Customer ,ServiceRegistration
+from countryinfo.country_api.serializers import StateSerializer,CitySerializer,CountryCreateSerializer
 from django.contrib.auth.hashers import make_password
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
@@ -28,10 +29,9 @@ User=get_user_model()
 
 
 class RegisterSerializer(ModelSerializer):
-	password2=CharField(allow_blank=False,write_only=True,label='Confirm Password',style={'input_type':'password'})
-	password=CharField(allow_blank=False,write_only=True,label='Password',style={'input_type':'password'})
-	service_user=BooleanField(default=False,write_only=True)
-	service_provider=BooleanField(default=False,write_only=True)
+	password2=CharField(allow_blank=False,write_only=True,label='Confirm Password')
+	password=CharField(allow_blank=False,write_only=True,label='Password')
+	IsServiceProvider=BooleanField(default=False,write_only=True)
 	class Meta:
 		model= User 
 		fields = [
@@ -39,20 +39,14 @@ class RegisterSerializer(ModelSerializer):
 			'password',
 			'password2',
 			'email',
-			'service_user',
-			'service_provider'
+			'IsServiceProvider'
 			]
 
 		read_only_fields = ['is_staff', 'is_superuser']
 
 
 	def validate(self,data):
-		email=data['email']
-		service_user=data['service_user']
-		service_provider=data['service_provider']
-		if service_provider == service_user:
-			raise ValidationError("Select one of the field")
-			
+		email=data['email']	
 		user_qs=User.objects.filter(email=email)
 		if user_qs:
 			raise ValidationError("This user Email is already Registered")
@@ -82,8 +76,7 @@ class RegisterSerializer(ModelSerializer):
 		username=validated_data['username']
 		email=validated_data['email']
 		password=validated_data['password']
-		service_user=validated_data['service_user']
-		service_provider=validated_data['service_provider']
+		IsServiceProvider=validated_data['IsServiceProvider']
 		#activation_key=validated_data['activation_key']
 		user=User(
 			username=username,
@@ -91,7 +84,7 @@ class RegisterSerializer(ModelSerializer):
 			)
 		user.set_password(password)
 		user.save()
-		service=ServiceRegistration.objects.create(user_service=user,service_user=service_user,service_provider=service_provider)
+		service=ServiceRegistration.objects.create(user_service=user,IsServiceProvider=IsServiceProvider)
 		service.save()
 		return user
 
@@ -108,19 +101,15 @@ class RegisterListSerializer(ModelSerializer):
 
 class UserLoginSerializer(ModelSerializer):
 	token=CharField(allow_blank=True,read_only=True)
-	service_provider=BooleanField(default=False,write_only=True)
-	service_user=BooleanField(default=False,write_only=True)
-	username=CharField(required=False,allow_blank=True)
+	IsServiceProvider=BooleanField(default=False,write_only=True)
 	email=EmailField(label='Email Address',required=False,allow_blank=True)
 	password=CharField(write_only=True,style={'input_type':'password'})
 	class Meta:
 		model= User 
 		fields = [
-			'username',
 			'email',
 			'password',
-			'service_user',
-			'service_provider',
+			'IsServiceProvider',
 			'token'
 			]
 		
@@ -128,30 +117,26 @@ class UserLoginSerializer(ModelSerializer):
 	def validate(self,data):
 		user_obj=None
 		email=data.get('email')
-		username=data.get("username",None)
 		password=data['password']
-		service_user=data['service_user']
-		service_provider=data['service_provider']
+		IsServiceProvider=data['IsServiceProvider']
 		#pdb.set_trace()
-		if service_provider==service_user:
-			raise ValidationError("Select only one field ")
 		if not email and not username:
 			raise ValidationError("username or email is required to login")
 
-		user=User.objects.filter(Q(username=username)| Q(email=email)).distinct()
-		user=user.exclude(email__isnull=True).exclude(email__iexact='')
+		user=User.objects.filter(email=email)
+	
 		if user.exists() and user.count()==1:
 			user_obj=user.first()
 		else:
-			raise ValidationError("username and password is not valid")
+			raise ValidationError("email and password is not valid")
 
 		if user_obj:
 			if not user_obj.check_password(password):
 				raise ValidationError("Incorrect Credentials please try again")
-		if user_obj.service.service_user==service_user and user_obj.service.service_provider==service_provider:
+		if user_obj.service.IsServiceProvider==IsServiceProvider :
 			print "success"
 		else:
-			raise ValidationError("Incorrect selection field")
+			raise ValidationError("not authenticated")
 
 		data['token']="anfaflfafja"
 		return data
@@ -166,11 +151,15 @@ class ForegetPasswordSerializer(ModelSerializer):
 				]
 
 	def validate(self,data):
+		user_obj=None
 		email=data['email']
-		user=User.objects.get(email=email)
-		if not user:
+		user=User.objects.filter(email=email).distinct()
+		if user.exists() and user.count()==1:
+			user_obj=user.first()
+		else:
 			raise ValidationError('Email address of this user is not exist so please signup')
-		return data
+
+		return user_obj
 
 	
 
@@ -200,7 +189,11 @@ class PasswordSerializer(ModelSerializer):
 			raise ValidationError("Password must match")
 		return value
 
+
+
+
 	
+
 		
 
 class UserDetailSerializer(ModelSerializer):
@@ -211,7 +204,7 @@ class UserDetailSerializer(ModelSerializer):
 			]
 
 class ProfileSerializerdemo(ModelSerializer):
-	user=UserDetailSerializer
+	user=UserDetailSerializer()
 	class Meta:
 		model=ServiceRegistration
 		fields=[
@@ -254,9 +247,10 @@ class ChangePasswordSerializer(ModelSerializer):
 
 
 class ProfileSerializer(ModelSerializer):
-	service=ServiceProviderSerializer()
 	user=UserDetailSerializer()
 	country=CountryCreateSerializer()
+	city=CitySerializer()
+	state=StateSerializer()
 	latitude=CharField(required=False,write_only=True)
 	longitude=CharField(required=False,write_only=True)
 	class Meta:
@@ -265,8 +259,39 @@ class ProfileSerializer(ModelSerializer):
 				'name',
 				'phone',
 				'country',
-				'service',
+				'city',
+				'state',
 				'user',
 				'latitude',
 				'longitude'
 				]
+
+		
+
+class SocialMediaLoginSerializer(ModelSerializer):
+	logintype=CharField(required=True,write_only=True)
+	IsServiceProvider=BooleanField(default=False,write_only=True)
+	class Meta:
+		model=User
+		fields=[
+			'username',
+			'email',
+			'logintype',
+			'IsServiceProvider'
+			]
+
+	def validate(self,validated_data):
+		username=validated_data['username']
+		email=validated_data['email']
+		logintype=validated_data['logintype']
+		IsServiceProvider=validated_data['IsServiceProvider']
+		if not email and not username:
+			raise ValidationError("username and email is required to login")
+
+		user=User.objects.filter(username=username,email=email).distinct()
+		if user.exists() and user.count()==1:
+			print "success"
+		else:
+			raise ValidationError("Email and Username not Found")
+
+		return data

@@ -3,7 +3,7 @@ from .models import ServiceRegistration
 
 
 class ServiceRegistrationAdmin(admin.ModelAdmin):
-	list_display=['user_service','service_user','service_provider']
+	list_display=['user_service','IsServiceProvider']
 	class Meta:
 		model=ServiceRegistration
 

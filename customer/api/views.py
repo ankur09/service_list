@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 import hashlib
 from customer.models import ServiceRegistration 
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.response import Response 
 from rest_framework.status import HTTP_200_OK,HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView 
@@ -18,7 +19,8 @@ from .serializers import (
 	ForegetPasswordSerializer,
 	PasswordSerializer,
 	ChangePasswordSerializer,
-	ProfileSerializer
+	ProfileSerializer,
+	SocialMediaLoginSerializer
 	)
 from rest_framework.generics import (
 	CreateAPIView,
@@ -38,6 +40,7 @@ from django.core.mail import send_mail, BadHeaderError
 from django.shortcuts import redirect
 from django.utils.crypto import get_random_string
 import pdb
+from django.contrib.auth import authenticate
 
 User=get_user_model()
 
@@ -53,8 +56,16 @@ class RegisterListAPIView(ListAPIView):
 
 
 class UserLoginAPIView(APIView):
+	authentication_classes=(SessionAuthentication,BasicAuthentication)
 	permissions_classes=[AllowAny]
 	serializer_class=UserLoginSerializer
+
+	# def get(self,request,format=None):
+	# 	content= {
+	# 		'user':unicode(request.user),
+	# 		'auth':unicode(request.auth)
+	# 	}
+	# 	return Response(content)
 
 	def post(self,request,*args,**kwargs):
 		data=request.data
@@ -67,7 +78,6 @@ class UserLoginAPIView(APIView):
 class ForgetPasswordAPIView(APIView):
 	#permissions_classes=[IsAuthenticated]
 	serializer_class=ForegetPasswordSerializer
-
 	def post(self,request,*args,**kwargs):
 		data=request.data
 		#pdb.set_trace()
@@ -78,7 +88,7 @@ class ForgetPasswordAPIView(APIView):
 			secret_key=get_random_string(5,chars)
 			activation_key=hashlib.sha256((secret_key + user.username).encode('utf-8')).hexdigest()
 			print activation_key
-			service_register=ServiceRegistration.objects.select_related('activation_key').get(user_service=user)
+			service_register=ServiceRegistration.objects.get(user_service=user)
 			service_register.activation_key=activation_key
 			service_register.save()
 			service_register.send_email()
@@ -98,12 +108,14 @@ class PasswordAPIView(APIView):
 			service_user=ServiceRegistration.objects.filter(activation_key__icontains=kwargs['activation_key'],id=kwargs['service_id']).distinct()
 			if service_user.exists() and service_user.count()==1:
 				service_user=service_user.first()
-				service_user.email_verified=True
-				service_user.save()
-				return Response({'success':True})
+
+			service_user.user_service.set_password(data['password'])
+			service_user.email_verified=True
+			service_user.save()
+			return Response({'success':True})
 				
-			else:
-				return Response({'Status':'Failed'})
+		else:
+			return Response({'Status':'Failed'})
 				
 
 class ChangePasswordView(APIView):
@@ -134,3 +146,16 @@ class ProfileAPIView(APIView):
 			return Response({'success':True})
 		else:
 			return Response({'status':False})
+
+
+
+class SocialMediaView(APIView):
+	serializer_class=SocialMediaLoginSerializer
+
+	def post(self,request,*args,**kwargs):
+		data=request.data
+		serializer=SocialMediaLoginSerializer(data=data)
+		if serializer.is_valid(raise_exception=True):
+			return Response({'success':True})
+		else:
+			return Response({"success":False})

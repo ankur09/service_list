@@ -24,8 +24,7 @@ class Customer(models.Model):
 
 class ServiceRegistration(Customer):
 	user_service=models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='service')
-	service_user=models.BooleanField(default=False)
-	service_provider=models.BooleanField(default=False)
+	IsServiceProvider=models.BooleanField(default=False)
 	activation_key=models.CharField(max_length=255,blank=True,null=True)
 	key_expires=models.DateTimeField(default=datetime.now)
 

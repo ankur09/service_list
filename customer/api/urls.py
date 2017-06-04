@@ -8,7 +8,8 @@ from .views import (
 	ForgetPasswordAPIView,
 	PasswordAPIView,
 	ChangePasswordView,
-	ProfileAPIView
+	ProfileAPIView,
+	SocialMediaView
 	)
 
 urlpatterns=[
@@ -18,6 +19,7 @@ urlpatterns=[
 	url(r'^forget/$',ForgetPasswordAPIView.as_view(),name='forget'),
 	url(r'^change/$',ChangePasswordView.as_view(),name='change_password'),
 	url(r'^profile/$',ProfileAPIView.as_view(),name='profile'),
+	url(r'^social_login/$',SocialMediaView.as_view(),name='Social login'),
 	url(r'^activation_code/(?P<activation_key>[0-9A-Za-z-]+)/(?P<service_id>\d+)',PasswordAPIView.as_view(),name='password')
 	
 	]
